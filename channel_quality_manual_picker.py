@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import h5py
 import utils as utl
+from pathlib import Path
+from datetime import datetime
 
 
 def plot_per_channel_matrix(data, num_channels=None, ch0=0, start_ch=0, bad_channels=None):
@@ -193,17 +195,16 @@ def channel_picker(data, dt=None, start_ch=0):
 
 
 if __name__ == "__main__":
-    filename = "data/CANDAS/TF/ZI.T20200727_2044.h5"
-    with h5py.File(filename, "r") as f:
-        data = f["data"][:]
-        dt = f["data"].attrs["dt_s"][()]
-
-    first_ch = 1745
-    last_ch = 1849
-    data = utl.set_data_limits(pd.DataFrame(data).T, first_ch, last_ch, first_time=4500)
+    filepath = Path('/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS/GC/20200815_19h05m/eventCANDAS/').absolute()
+    data = utl.import_miniseed(filepath, 2020, 'G')
+    first_ch = 415
+    last_ch = data.shape[1]
+    first_time = 13000
+    last_time = 18000
+    data = utl.set_data_limits(data, first_ch=first_ch, last_ch=last_ch, first_time=first_time, last_time=last_time)
     data = utl.filter_imported_data(data, decimate_data=True)
     data = data.T.to_numpy()
-    #print(data.shape)
+    dt = 0.04
 
     # Iterate channel slices
     slice_size = 25
@@ -219,4 +220,6 @@ if __name__ == "__main__":
     quality_labels = np.concatenate(qualities).astype(int)
     print("Final picks:")
     print(quality_labels)
-    np.savetxt("results/quality_labels.txt", quality_labels, delimiter=",", fmt="%d")
+    timestamp = datetime.now().strftime("%m%d_%H%M")
+
+    np.savetxt("results/quality_labels" + "_" + timestamp + ".txt", quality_labels, delimiter=",", fmt="%d")
