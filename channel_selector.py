@@ -6,6 +6,8 @@ from matplotlib.widgets import Button
 import time
 import threading
 import h5py
+import utils as utl
+from datetime import datetime
 
 
 class SignalMatrixPlot:
@@ -287,7 +289,7 @@ class SelectionPlotter:
 
                     # Launch event on a timer to account for double clicks
                     self.single_click_event = threading.Timer(
-                        0.1, self.paint_channel, [channel_idx, click_type]
+                        0.15, self.paint_channel, [channel_idx, click_type]
                     )
                     self.single_click_event.start()
                     return
@@ -440,18 +442,35 @@ class ChannelSelector:
 
 
 if __name__ == "__main__":
-    fpath = "data/hdas/20230720-114924.h5"
-    filename = "data/hdas/20230720-114924.h5"
-    with h5py.File(filename, "r") as f:
-        data = f["data"][:]
-        dt = f["data"].attrs["dt_s"][()]
+    #fpath = "data/hdas/20230720-114924.h5"
+    #filename = "data/CANDAS/TF/ZI.T20200727_2044.h5"
+    #filename = 'data/CANDAS/TF/ZI.T20200727_1305.h5'
+    #filename = "data/CASTOR/z12023_06_01_06h48m33s_318.h5"
+    filename = 'data/SAFE/ICM_2023-11-13_14-57-38.h5'
 
-    data = data[1000:1100, 1600:2000]
+    data = utl.import_h5(filename)
+    #freq = 50
+    freq = 100 #because decimating data
+    data = utl.filter_imported_data(data,pass_low=3, pass_hi=12.5, freq=freq, decimate_data=True)
+    #start_channel = 745
+    #start_channel = 1082
+    start_channel = 236
+
+    #data = utl.set_data_limits(data, first_ch=start_channel, first_time=4000)
+    #data = utl.set_data_limits(data, first_ch=start_channel, first_time=2250, last_time=3750)
+    #data = utl.set_data_limits(data, first_ch=start_channel, first_time=1250, last_time=2000)
+    data = utl.set_data_limits(data, first_ch=start_channel,first_time=3000, last_time=6500)
+    data = data.T.to_numpy()
 
     # This is the basic usage
-    start_channel = 0
-    selector = ChannelSelector(data, dt, start_channel, output_fname="quality_mark.csv")
+    selector = ChannelSelector(data, 1./50, start_channel, output_fname="quality_mark.csv")
     selector.auto_select_using_snr(threshold=3)
-    selector.select(slice_size=49, channel_shift=0)
+    selector.select(slice_size=36, channel_shift=0)
 
     print(selector.get_selections())
+
+    timestamp = datetime.now().strftime("%m%d_%H%M")
+    if filename.endswith(".h5"):
+        selector.save_selections('channel_selections/CQI_selections_' + filename.split('/')[-1].split('.')[1] + '_picked_' + timestamp + '.csv')
+    else:
+        selector.save_selections('channels_selections/CQI_selections_' + "miniseed_RENAME_ME" + '_' + timestamp + '.csv')
