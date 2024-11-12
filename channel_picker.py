@@ -5,6 +5,9 @@ from collections.abc import Iterable
 from matplotlib.widgets import Button
 import time
 import h5py
+import utils as utl
+from pathlib import Path
+from datetime import datetime
 
 
 class PickPlotter:
@@ -93,9 +96,10 @@ class PickPlotter:
             color = "C1" if self.bad_channels[index] else "C0"
             x = np.linspace(0, data.shape[1] * self.dt, data.shape[1])
             ax.plot(x, data[index, :], color=color)
-            ax.title.set_text(str(index + start_channel))
+            ax.set_title(str(index + start_channel), fontsize=10)
 
         fig.tight_layout()
+        fig.subplots_adjust(wspace=0.15, hspace=0.15) #if want to cram as many subplots as possible together
         self.fig_matrix, self.ax_matrix = fig, axes
 
     def _update_overlay(self, bad_channels):
@@ -236,6 +240,18 @@ class ChannelPicker:
         bad_channels = np.where(df_features["crest-factor"] < threshold, 0, 0)
         self.picks = bad_channels
 
+    def autopick_using_root_amplitude(self, threshold=5):
+        """Find bad channels automatically according to a criterion."""
+
+        def root_amplitude(values):
+            return np.square(np.mean(np.sqrt(np.abs(values))))
+        
+        df_features = pd.DataFrame()
+        df_features['root-amplitude'] = np.apply_along_axis(root_amplitude, 1, self.data)
+
+        bad_channels = np.where(df_features["root-amplitude"] > threshold, 0, 0)
+        self.picks = bad_channels
+
     def pick(self, slice_size=25, channel_shift=0, last_ch=None):
         if last_ch is None:
             last_ch = len(self.picks)
@@ -282,18 +298,40 @@ class ChannelPicker:
 
 
 if __name__ == "__main__":
-    fpath = "data/hdas/20230720-114924.h5"
-    filename = "data/hdas/20230720-114924.h5"
-    with h5py.File(filename, "r") as f:
-        data = f["data"][:]
-        dt = f["data"].attrs["dt_s"][()]
+    #fpath = "data/hdas/20230720-114924.h5"
+    #filename = "data/CANDAS/TF/ZI.T20200727_2044.h5"
+    #filename = '/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS2/CANDAS2_2022-12-27_07-46-15.h5'
+    #gc_file = 'data/toTatiana/events_CANDAS_TF&GC/ZI.G20200822_1713.h5' 
+    #filepath = 'data/toTatiana/events_CANDAS_TF&GC/ZI.T20200822_1713.h5'
+    #filepath = 'data/CASTOR/20230720-114924.h5' 
+    filepath = 'data/CASTOR/20230720-115624.h5'
 
-    data = data[:101, :2000]
+    #filepath = '/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS/GC/20200815_19h05m/eventCANDAS/'
+    #data = utl.import_miniseed(filepath, 2020, 'G')
+    
+    #data = utl.import_h5(gc_file)
+    data = utl.import_h5(filepath)
+    freq = 100
+    data = utl.filter_imported_data(data,pass_low=3, pass_hi=12.5, freq=freq, decimate_data=False)
+    #data = utl.set_data_limits(data, first_ch=415, first_time=50, last_time=2500) #gc
+    first_ch = 1082
+    data = utl.set_data_limits(data, first_ch=first_ch, first_time=3500, last_time=5500)
+
+    # last_ch = 8000
+    # first_time = 3500
+    # last_time = 4500
+    # data = utl.set_data_limits(data, first_ch=first_ch, last_ch=last_ch, first_time=first_time, last_time=last_time)
+    data = data.T.to_numpy()
 
     # This is the basic usage
-    start_channel = 0
-    picker = ChannelPicker(data, dt, start_channel, output_fname="quality_picks.csv")
-    picker.autopick_using_snr(threshold=3)
-    picker.pick(slice_size=49, channel_shift=0)
+    picker = ChannelPicker(data, 1./freq, first_ch, output_fname="quality_picks.csv")
+    picker.autopick_using_snr(threshold=4.5)
+    #picker.autopick_using_root_amplitude(threshold=3)
+    picker.pick(slice_size=36, channel_shift=0) #for saving channels
 
     print(picker.get_picks())
+    timestamp = datetime.now().strftime("%m%d_%H%M")
+    if filepath.endswith(".h5"):
+        picker.save_picks('quality_picks_' + filepath.split('/')[-1].split('.')[1] + '_picked_' + timestamp + '.csv')
+    else:
+        picker.save_picks('quality_picks_' + "miniseed_RENAME_ME" + '_' + timestamp + '.csv')

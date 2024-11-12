@@ -13,9 +13,8 @@ def plot_per_channel_matrix(data, num_channels=None, ch0=0, start_ch=0, bad_chan
         num_channels = data.shape[0]
     x = int(np.sqrt(num_channels))  # make it a 10 by 10 visual matrix
     sz = 10  # matplotlib size of figure
-    fig, ax = plt.subplots(nrows=x, ncols=x, figsize=(sz + sz / 2, sz))
-    print('start_ch=',start_ch)
-
+    fig, ax = plt.subplots(nrows=x, ncols=x, figsize=(sz + sz / 2, sz),constrained_layout=True)
+    
     for i, row in enumerate(ax):
         for j, col in enumerate(row):
             k = i * x + j
@@ -27,7 +26,8 @@ def plot_per_channel_matrix(data, num_channels=None, ch0=0, start_ch=0, bad_chan
             else:
                 color = "C0"
             col.plot(data[ch0 + k], color=color)
-            col.title.set_text(str(start_ch + k))
+            col.set_title(str(start_ch + k), fontsize=6)
+            col.set_x
 
     fig.tight_layout()
     return fig, ax
@@ -195,19 +195,23 @@ def channel_picker(data, dt=None, start_ch=0):
 
 
 if __name__ == "__main__":
-    filepath = Path('/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS/GC/20200815_19h05m/eventCANDAS/').absolute()
+    filepath = '/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS/GC/20200815_19h05m/eventCANDAS/'
+    #filepath = Path('/home/tatiana/Documents/Onboarding_to_TREMORS/CANDAS2/').absolute()
     data = utl.import_miniseed(filepath, 2020, 'G')
-    first_ch = 415
-    last_ch = data.shape[1]
-    first_time = 13000
-    last_time = 18000
+    #data = utl.import_h5(filepath,'CANDAS2_2022-12-27_07-46-15.h5')
+    first_ch = 2000
+    last_ch = 2700
+    #first_time = 1500
+    #last_time = 3000
+    first_time = 10000
+    last_time = 20000
+    data = utl.filter_imported_data(data, pass_hi=12.5, decimate_data=False)
     data = utl.set_data_limits(data, first_ch=first_ch, last_ch=last_ch, first_time=first_time, last_time=last_time)
-    data = utl.filter_imported_data(data, decimate_data=True)
     data = data.T.to_numpy()
-    dt = 0.04
+    dt = 0.02
 
     # Iterate channel slices
-    slice_size = 25
+    slice_size = 100
     qualities = []
     for idx in range(0, data.shape[0], slice_size):
         data_slice = data[idx : idx + slice_size, :]
