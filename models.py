@@ -117,7 +117,7 @@ def fit_train_RFE(model, X_train, X_test, y_train, y_test, n_features=20, verbos
     score = model.score(X_test_rfe, y_test)
     print(f"Model accuracy with selected features: {score}")
 
-    return rfe, model
+    return rfe, model, selected_features
 
 def show_confusion_matrix(model, X_test, y_test, title = ""):
     y_pred = model.predict(X_test)
@@ -143,9 +143,9 @@ def show_confusion_matrix_given_ytestypred(y_test, y_pred, title = ""):
     ax2.yaxis.set_ticklabels(['poor quality', 'high quality']);
     plt.tight_layout()
 
-def view_feature_importances(model, X_train, title=''):
+def view_feature_importances(model, X_train, figsize,title=''):
     feature_scores = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
-    _, ax = plt.subplots(figsize=(10,25))
+    _, ax = plt.subplots(figsize=figsize)
     ax = sns.barplot(x=feature_scores, y=feature_scores.index)
     ax.set_title("Visualize feature scores of the features" + title)
     ax.set_yticklabels(feature_scores.index)
