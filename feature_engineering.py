@@ -276,7 +276,7 @@ def get_prominence_factor(envelope_channel, num_peaks):
 def create_feature_df(df_in):
     #create dataframe
     df_features = pd.DataFrame()
-    
+
     #standard features
     df_features['mean'] = df_in.mean()
     df_features['median'] = df_in.median()
@@ -298,15 +298,23 @@ def create_feature_df(df_in):
     df_features['detection-significance'] = (df_features['peak'] - df_features['median'])/df_features['median-absolute-deviation']
     
     #new features
+    t0 = time.time()
     kurt_window = 250
     grad_window = 25
     stack_window = 100
     kurtosis_df = df_in.apply(lambda x: kurtosis(np.lib.stride_tricks.sliding_window_view(x, window_shape = kurt_window), axis=1))
     gradient_kurtosis_df = kurtosis_df.apply(lambda x: np.gradient(x))
+    t1 = time.time()
+    print('did simple kurtosis: ',str(timedelta(seconds= t1 - t0))[:-4])
     gentle_gradient_kurtosis_df = kurtosis_df.apply(lambda x: np.apply_along_axis(get_alt_slope, axis=1, arr=np.lib.stride_tricks.sliding_window_view(x, grad_window)), axis=0)
-    
+    t1 = time.time()
+    print('applied gentle gradient: ',str(timedelta(seconds= t1 - t0))[:-4])
     stacked_channels_df = df_in.T.rolling(window=stack_window).sum().T
+    t1 = time.time()
+    print('stacked channels: ',str(timedelta(seconds= t1 - t0))[:-4])
     stacked_kurtosis_df = stacked_channels_df.apply(lambda x: kurtosis(np.lib.stride_tricks.sliding_window_view(x, window_shape = kurt_window), axis=1))
+    t1 = time.time()
+    print('did kurtosis on stacked channels: ',str(timedelta(seconds= t1 - t0))[:-4])
     stacked_gradient_kurtosis_df = stacked_kurtosis_df.apply(lambda x: np.gradient(x))
     stacked_kurtosis_gradients = []
     for seq in np.lib.stride_tricks.sliding_window_view(stacked_gradient_kurtosis_df.columns, window_shape = stack_window)[::1]: #was grad_window?
@@ -322,9 +330,12 @@ def create_feature_df(df_in):
     gentle_stacked_kurtosis_gradients = np.array(gentle_stacked_kurtosis_gradients) + kurt_window
     extension_length = df_in.shape[1] - len(gentle_stacked_kurtosis_gradients)
     gentle_stacked_kurtosis_gradients = np.concatenate([gentle_stacked_kurtosis_gradients, np.full(extension_length, gentle_stacked_kurtosis_gradients[-1])])
+    t1 = time.time()
+    print('finished gentle kurtosis: ',str(timedelta(seconds= t1 - t0))[:-4])
 
     envelope_df = df_in.apply(lambda x: make_envelope(x, 100)) # 2x sample frequency
-    
+    t1 = time.time()
+    print('created envelope: ',str(timedelta(seconds= t1 - t0))[:-4])
     gauge_length = 10
     df_features['dist-from-interrogator'] = df_in.columns * gauge_length
 
@@ -367,7 +378,8 @@ def create_feature_df(df_in):
     # are both neighbors (or whole region) good/bad %;
     # proportion of 10 around (+/-5) that are good/bad
     #CHECK #delta kurtosis of freq x delta kurtosis of amplitude?
-    print('created normal features')
+    t1 = time.time()
+    print('created normal features ',str(timedelta(seconds= t1 - t0))[:-4])
 
 
     #mfcc features
@@ -403,7 +415,8 @@ def create_feature_df(df_in):
     #and now applied to the envelope:
     env_mfccs_mean = envelope_df.apply(lambda x: calculate_mfccs(x)[0])
     env_mfccs_max = envelope_df.apply(lambda x: calculate_mfccs(x)[1])
-    print('created envelope mfccs')
+    t1 = time.time()
+    print('created envelope mfccs ',str(timedelta(seconds= t1 - t0))[:-4])
     df_features['env_mfcc0_mean'] = env_mfccs_mean.loc[0,:]
     df_features['env_mfcc1_mean'] = env_mfccs_mean.loc[1,:]
     df_features['env_mfcc2_mean'] = env_mfccs_mean.loc[2,:]
@@ -433,7 +446,8 @@ def create_feature_df(df_in):
 
     #PSD-derived features
     df_psd = calculate_psd(df_in)
-    print('created psd')
+    t1 = time.time()
+    print('created psd ',str(timedelta(seconds= t1 - t0))[:-4])
     df_features['psd-mean'] = np.array(df_psd.mean())
     df_features['psd-median'] = np.array(df_psd.median())
     df_features['psd-variance'] = np.array(df_psd.var())
@@ -445,7 +459,8 @@ def create_feature_df(df_in):
     df_features['psd-crest-factor'] = np.array(df_features['psd-peak']/df_features['psd-rms'])
     #applied to envelope
     df_env_psd = calculate_psd(envelope_df)
-    print('created psd of envelope')
+    t1 = time.time()
+    print('created psd of envelope ',str(timedelta(seconds= t1 - t0))[:-4])
     df_features['env_psd-mean'] = np.array(df_env_psd.mean())
     df_features['env_psd-median'] = np.array(df_env_psd.median())
     df_features['env_psd-variance'] = np.array(df_env_psd.var())
@@ -467,7 +482,8 @@ def create_feature_df(df_in):
     df_features['freq-rms'] = np.array(df_fft.apply(lambda x: rms(x)))
     df_features['freq-peak'] = np.array(df_fft.max())
     df_features['freq-crest-factor'] = np.array(df_features['freq-peak']/df_features['freq-rms'])
-    df_features['two_kurtoses'] = df_features['freq-kurtosis'] * df_features['kurtosis']
+    #df_features['two_kurtoses'] = df_features['freq-kurtosis'] * df_features['kurtosis'] #forgot to make this its own feature
+    
     #applied to envelope
     df_env_fft = envelope_df.apply(lambda x: fft(x.values)).abs()
     df_features['env_freq-avg'] = envelope_df.apply(lambda x: freq_avg(x))
