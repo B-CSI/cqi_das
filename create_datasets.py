@@ -51,11 +51,24 @@ def process_dataset(df: pd.DataFrame, bad_channels: np.ndarray, event_label: str
     df_features["mad_pcc"] = pcc_results["pcc_mad_feature"]
     df_features["lags"] = pcc_results["pcc_lags_feature"]
 
-    # 4) Create a 'target' column, marking bad=1
+    # 4) Create 'target' column
     df_features["target"] = 0
-    df_features.loc[bad_channels, "target"] = 1
 
-    # 5) Save final DataFrame to CSV
+    # Make sure index is int if your channels are int-based
+    df_features.index = df_features.index.astype(int)
+    # Also ensure bad_channels is int-based
+    bad_channels = [int(ch) for ch in bad_channels]
+
+    # Intersection
+    common_ch = df_features.index.intersection(bad_channels)
+    df_features.loc[common_ch, "target"] = 1
+
+    # Optional: warn about missing channels
+    missing = set(bad_channels) - set(df_features.index)
+    if missing:
+        print(f"[{event_label}] Warning: The following channels are not found: {missing}")
+
+    # 5) Save DataFrame
     outfile = f"{event_label}_features.csv"
     df_features.to_csv(outfile)
     print(f"[{event_label}] Saved features (including target) to {outfile}")
@@ -229,7 +242,22 @@ def main():
             "first_time": 13000,
             "last_time": 18000,
         },
+        {
+            "name": "safe2",
+            "pathname": "data/SAFE/ICM_2023-12-15_23-43-29.h5",
+            "bad_channels_path": "channel_selections/CQI_selections_SAFE_2023-12-15_23-43-29_picked_1203.csv",
+            "pass_low": 3,
+            "pass_hi": 20,
+            "freq": 100,
+            "decimate_data": True,
+            "first_ch": 236,
+            "first_time": 5000,
+            "last_time": 7500,
+        },
     ]
+
+    dataset_configs = dataset_configs[-1:]
+    print(dataset_configs)
 
     max_workers = 4  # Adjust based on how many cores you want to use
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
