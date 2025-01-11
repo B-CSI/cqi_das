@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cqi_das"
+version = "2025.0.0"
+license = {file = "LICENSE"}
+keywords = ["DAS", "Channel Quality Index", "Signal Processing"]
+requires-python = ">=3.8"
+authors = [
+  { name="Tatiana Rodriguez"},
+  { name="Aleix Segui" }
+]
+description = "Channel Quality Index for Distributed Acoustic Sensing"
+readme = "README.md"
+dependencies = [
+  "numpy",
+  "librosa",
+  "scipy",
+  "pandas",
+  "scikit-learn",
+  "matplotlib"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/B-CSI"
