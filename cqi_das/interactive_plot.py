@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.backend_bases import MouseEvent
 import numpy as np
 import pandas as pd
 
@@ -41,7 +42,7 @@ class DraggableThreshold:
         self.cid_release = line.figure.canvas.mpl_connect("button_release_event", self.on_release)
         self.cid_motion = line.figure.canvas.mpl_connect("motion_notify_event", self.on_motion)
 
-    def on_press(self, event: plt.MouseEvent) -> None:
+    def on_press(self, event: MouseEvent) -> None:
         """
         Record initial reference if click is near the threshold line.
 
@@ -57,7 +58,7 @@ class DraggableThreshold:
         if abs(event.xdata - x0) < 0.2:  # Tolerance in data coordinates
             self.press = (x0, event.x)
 
-    def on_motion(self, event: plt.MouseEvent) -> None:
+    def on_motion(self, event: MouseEvent) -> None:
         """
         Drag the threshold line with the mouse (lightweight update).
 
@@ -80,7 +81,7 @@ class DraggableThreshold:
         self.line.set_xdata([new_x, new_x])
         self.line.figure.canvas.draw_idle()
 
-    def on_release(self, event: plt.MouseEvent) -> None:
+    def on_release(self, event: MouseEvent) -> None:
         """
         Finalize threshold update when mouse is released.
 

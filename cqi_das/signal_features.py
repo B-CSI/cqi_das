@@ -129,7 +129,7 @@ def get_prominence_factor_bs(envelope_channel: np.ndarray, num_peaks: int) -> in
     Returns
     -------
     int
-        Best integer factor that meets the number of peaks criterion.
+        Largest integer factor that meets the number of peaks criterion.
     """
     max_val = np.max(envelope_channel)
     left, right = 1, 100

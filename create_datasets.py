@@ -6,8 +6,8 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Local imports
-import utils
-from feature_engineering import create_feature_df, run_pcc
+import cqi_das.utils as utils
+from cqi_das.feature_engineering import create_feature_df, run_pcc
 
 
 def standardize_channels(df: pd.DataFrame) -> pd.DataFrame:
@@ -18,7 +18,9 @@ def standardize_channels(df: pd.DataFrame) -> pd.DataFrame:
     return df_standardized
 
 
-def process_dataset(df: pd.DataFrame, bad_channels: np.ndarray, event_label: str) -> pd.DataFrame:
+def process_dataset(
+    df: pd.DataFrame, bad_channels: np.ndarray, event_label: str, add_beta: bool = False
+) -> pd.DataFrame:
     """
     1) Standardize each channel of the input DataFrame.
     2) Extract features.
@@ -41,35 +43,36 @@ def process_dataset(df: pd.DataFrame, bad_channels: np.ndarray, event_label: str
 
     df_for_pcc = df_std
 
-    pcc_results = run_pcc(df_for_pcc, event_date=event_label)
+    if add_beta:
+        pcc_results = run_pcc(df_for_pcc, event_date=event_label)
 
-    # Add PCC-based features to df_features
-    df_features["beta"] = pcc_results["pcc_feature"]
-    df_features["modified-beta"] = pcc_results["modified_pcc_feature"]
-    df_features["mean_pcc"] = pcc_results["pcc_mean_feature"]
-    df_features["median_pcc"] = pcc_results["pcc_median_feature"]
-    df_features["mad_pcc"] = pcc_results["pcc_mad_feature"]
-    df_features["lags"] = pcc_results["pcc_lags_feature"]
+        # Add PCC-based features to df_features
+        df_features["beta"] = pcc_results["pcc_feature"]
+        df_features["modified-beta"] = pcc_results["modified_pcc_feature"]
+        df_features["mean_pcc"] = pcc_results["pcc_mean_feature"]
+        df_features["median_pcc"] = pcc_results["pcc_median_feature"]
+        df_features["mad_pcc"] = pcc_results["pcc_mad_feature"]
+        df_features["lags"] = pcc_results["pcc_lags_feature"]
 
-    # 4) Create 'target' column
-    df_features["target"] = 0
+    if bad_channels is not None:
+        df_features["target"] = 1
 
-    # Make sure index is int if your channels are int-based
-    df_features.index = df_features.index.astype(int)
-    # Also ensure bad_channels is int-based
-    bad_channels = [int(ch) for ch in bad_channels]
+        # Make sure index is int if your channels are int-based
+        df_features.index = df_features.index.astype(int)
+        # Also ensure bad_channels is int-based
+        bad_channels = [int(ch) for ch in bad_channels]
 
-    # Intersection
-    common_ch = df_features.index.intersection(bad_channels)
-    df_features.loc[common_ch, "target"] = 1
+        # Intersection
+        common_ch = df_features.index.intersection(bad_channels)
+        df_features.loc[common_ch, "target"] = 0
 
-    # Optional: warn about missing channels
-    missing = set(bad_channels) - set(df_features.index)
-    if missing:
-        print(f"[{event_label}] Warning: The following channels are not found: {missing}")
+        # Optional: warn about missing channels
+        missing = set(bad_channels) - set(df_features.index)
+        if missing:
+            print(f"[{event_label}] Warning: The following channels are not found: {missing}")
 
     # 5) Save DataFrame
-    outfile = f"{event_label}_features.csv"
+    outfile = f"features2/{event_label}_features.csv"
     df_features.to_csv(outfile)
     print(f"[{event_label}] Saved features (including target) to {outfile}")
 
@@ -114,10 +117,15 @@ def process_one_dataset(config: dict) -> None:
         # 4) Load bad channels
         if config.get("candas1", False):
             bad_channels = utils.load_bad_channels(candas1=True)
-        else:
+        elif config.get("bad_channels_path") is not None:
             bad_channels = utils.load_bad_channels(
                 filename=config["bad_channels_path"], first_ch=config["first_ch"]
             )
+        else:
+            bad_channels = None
+
+        if config.get("bad_ch_offset", "False"):
+            bad_channels = bad_channels - config.get("first_ch", 0)
 
         # 5) Process dataset (will create CSV)
         process_dataset(
@@ -159,6 +167,7 @@ def main():
             "first_ch": 236,
             "first_time": 3000,
             "last_time": 6500,
+            "bad_ch_offset": True,
         },
         {
             "name": "castor2",
@@ -171,6 +180,7 @@ def main():
             "first_ch": 1082,
             "first_time": 2500,
             "last_time": 4000,
+            "bad_ch_offset": True,
         },
         {
             "name": "twin_gc",
@@ -202,6 +212,7 @@ def main():
             "decimate_data": True,
             "first_ch": 745,
             "first_time": 4000,
+            "bad_ch_offset": True,
         },
         {
             "name": "tf_same_day",
@@ -213,6 +224,7 @@ def main():
             "first_ch": 745,
             "first_time": 4500,
             "last_time": 7500,
+            "bad_ch_offset": True,
         },
         {
             "name": "castor",
@@ -253,11 +265,24 @@ def main():
             "first_ch": 236,
             "first_time": 5000,
             "last_time": 7500,
+            "bad_ch_offset": True,
         },
     ]
 
-    dataset_configs = dataset_configs[-1:]
-    print(dataset_configs)
+    dataset_configs = [
+        {
+            "name": "candas2_222",
+            "pathname": "data/CANDAS2/CANDAS2_2023-02-22_07-01-14_filtered_2pn.h5",
+            "pass_low": 3,
+            "pass_hi": 20,
+            "freq": 50,
+            "decimate_data": True,
+            "first_ch": 415,
+            "first_time": 3000,
+            "last_time": 5500,
+            "bad_ch_offset": False,
+        }
+    ]
 
     max_workers = 4  # Adjust based on how many cores you want to use
     with ProcessPoolExecutor(max_workers=max_workers) as executor:

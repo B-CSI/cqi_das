@@ -9,7 +9,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.calibration import CalibratedClassifierCV
 from typing import Optional
 
-from feature_engineering import calculate_selected_features
+from signal_features import calculate_selected_features
 
 
 class CQIModel:

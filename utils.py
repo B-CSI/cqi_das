@@ -96,7 +96,7 @@ def filter_imported_data(data: pd.DataFrame, pass_low=3, pass_hi=18, freq=50, de
     if decimate_data == True:
         df_fil = data.apply(
             lambda x: (
-                obspy.signal.filter.bandpass(np.array(x), freqmin=pass_low, freqmax=12.5, df=freq)
+                obspy.signal.filter.bandpass(np.array(x), freqmin=pass_low, freqmax=pass_hi, df=freq)
             )
         )
         if freq != 50:

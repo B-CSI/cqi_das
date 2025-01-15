@@ -7,8 +7,8 @@ The **cqi_das** Python module provides tools to **detect and label high and low 
 ## What This Is
 
 Distributed Acoustic Sensing (DAS) data can contain many channels over long distances. Not all channels are equal in terms of signal quality, and **cqi_das** helps:
-1. **Predict** channel quality (i.e., the probability of a channel being high-quality).
-2. **Manually label** channels for cases where more controlled or custom classification is needed.
+1. **Predict** channel quality (i.e., the refined probability of a channel being high-quality).
+2. **Manually label** channels for cases custom classification is needed. Useful for training data generation.
 
 ## Installation
 
@@ -21,7 +21,7 @@ pip install .
 
 
 
-### Short usage example
+### Usage example
 
 ```python
 import cqi_das
@@ -61,6 +61,7 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 - **interactive** : `bool`, default=False  
   If `True`, opens an interactive matplotlib plot for threshold adjustment.
 
+`calculate_cqi` returns a `pd.Series` with the quality indexes for every channel in `data`. 
 
 ### Interactive mode
 
@@ -69,7 +70,7 @@ dragged to change the threshold. When this is used, the output is a prediction 0
 
 ### CQI processing steps
 
-Internally, CQI follows the following processing flow.
+The CQI for a given channel is the result of several processing steps. Internally, CQI follows the following processing flow.
 
 ![CQI Processing Diagram](figures/diagram-processing-wb.png)
 
