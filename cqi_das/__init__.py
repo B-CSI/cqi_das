@@ -7,5 +7,7 @@ GNU Lesser General Public License.
 """
 
 from . import utils
-from . import feature_engineering
+from . import feature_engineering as feature
 from .channel_selector import ChannelSelector
+from . import predict_quality as quality
+from .predict_quality import calculate_cqi
