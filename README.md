@@ -103,4 +103,4 @@ Two plots are connected and interactively updated to ease the manual labelling p
 CQI combines interpretable signal features into a machine learning model to predict the probability that a model has high quality. Below is an example of two different signals, high and low quality, with the respective impact of different
 features on the model based on SHAP values.
 
-![CQI Processing Diagram](figures/example_signals.png)
+![CQI Processing Diagram](figures/example_signals.jpg)
