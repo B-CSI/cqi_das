@@ -1,3 +1,11 @@
+"""
+Copyright (c) 2025, Spanish National Research Council (CSIC)
+Developed by the Barcelona Center for Subsurface Imaging (B-CSI)
+
+This source code is subject to the terms of the
+GNU Lesser General Public License.
+"""
+
 import numpy as np
 import pandas as pd
 import obspy

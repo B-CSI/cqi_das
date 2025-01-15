@@ -4,7 +4,7 @@ The **cqi_das** Python module provides tools to **detect and label high and low 
 
 ![CQI Showcase](figures/cqi_showcase_plot.jpg)
 
-## What This Is
+## What `cqi_das` Is
 
 Distributed Acoustic Sensing (DAS) data can contain many channels over long distances. Not all channels are equal in terms of signal quality, and **cqi_das** helps:
 1. **Predict** channel quality (i.e., the refined probability of a channel being high-quality).

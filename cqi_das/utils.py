@@ -1,6 +1,13 @@
+"""
+Copyright (c) 2025, Spanish National Research Council (CSIC)
+Developed by the Barcelona Center for Subsurface Imaging (B-CSI)
+
+This source code is subject to the terms of the
+GNU Lesser General Public License.
+"""
+
 from glob import glob
 from pathlib import Path
-from common import DATA_DIR
 import time
 from datetime import timedelta
 import h5py
@@ -96,7 +103,9 @@ def filter_imported_data(data: pd.DataFrame, pass_low=3, pass_hi=18, freq=50, de
     if decimate_data == True:
         df_fil = data.apply(
             lambda x: (
-                obspy.signal.filter.bandpass(np.array(x), freqmin=pass_low, freqmax=pass_hi, df=freq)
+                obspy.signal.filter.bandpass(
+                    np.array(x), freqmin=pass_low, freqmax=pass_hi, df=freq
+                )
             )
         )
         if freq != 50:
@@ -106,7 +115,9 @@ def filter_imported_data(data: pd.DataFrame, pass_low=3, pass_hi=18, freq=50, de
     else:
         df_fil = data.apply(
             lambda x: (
-                obspy.signal.filter.bandpass(np.array(x), freqmin=pass_low, freqmax=pass_hi, df=freq)
+                obspy.signal.filter.bandpass(
+                    np.array(x), freqmin=pass_low, freqmax=pass_hi, df=freq
+                )
             )
         )
 
@@ -127,7 +138,9 @@ def load_bad_channels(filename: str = None, first_ch: int = None, candas1=False)
             delimiter=",",
             skiprows=1,
         )
-        bad_channels_candas1_2nd_picked_ch_4426 = bad_channels_candas1_2nd_picked_ch_4426.astype(int)
+        bad_channels_candas1_2nd_picked_ch_4426 = bad_channels_candas1_2nd_picked_ch_4426.astype(
+            int
+        )
         bad_channels_candas1_2nd_picked_ch_4426.T[0] = (
             bad_channels_candas1_2nd_picked_ch_4426.T[0] + 4426
         )
@@ -136,7 +149,9 @@ def load_bad_channels(filename: str = None, first_ch: int = None, candas1=False)
             delimiter=",",
             skiprows=1,
         )
-        bad_channels_candas1_2nd_picked_ch_2701 = bad_channels_candas1_2nd_picked_ch_2701.astype(int)
+        bad_channels_candas1_2nd_picked_ch_2701 = bad_channels_candas1_2nd_picked_ch_2701.astype(
+            int
+        )
         bad_channels_candas1_2nd_picked_ch_2701.T[0] = (
             bad_channels_candas1_2nd_picked_ch_2701.T[0] + 2701
         )

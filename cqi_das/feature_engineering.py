@@ -1,3 +1,14 @@
+"""
+Copyright (c) 2025, Spanish National Research Council (CSIC)
+Developed by the Barcelona Center for Subsurface Imaging (B-CSI)
+
+This source code is subject to the terms of the
+GNU Lesser General Public License.
+
+
+Note: this file is kept for legacy purposes, but contains unclean code.
+"""
+
 import numpy as np
 import pandas as pd
 import os
@@ -31,7 +42,11 @@ def rms_w(rs: pd.Series, window=200):
     if window_right > len(rs):
         window_right = len(rs)
     return np.sqrt(
-        (np.sum(rs[window_left:window_center] ** 2) + np.sum(rs[window_center + 1 : window_right] ** 2)) / (2 * window)
+        (
+            np.sum(rs[window_left:window_center] ** 2)
+            + np.sum(rs[window_center + 1 : window_right] ** 2)
+        )
+        / (2 * window)
     )
 
 
@@ -310,7 +325,9 @@ def get_alt_slope(seq):
 # there should be a 50% overlap on the windows! So the rms value can be assigned to the point in the middle
 def make_envelope(data, window_size):
     test_rms_list = []
-    for seq in np.lib.stride_tricks.sliding_window_view(data, window_size)[:: window_size // 2, :]:  # 50% overlap
+    for seq in np.lib.stride_tricks.sliding_window_view(data, window_size)[
+        :: window_size // 2, :
+    ]:  # 50% overlap
         test_rms_list.append(rms(seq))
     return test_rms_list
 
@@ -346,9 +363,9 @@ def create_feature_df(df_in):
     df_features["shape-factor"] = df_features["rms"] / df_features["Average-rectified-value"]
     df_features["clearance-factor"] = df_features["peak"] / df_features["root-amplitude"]
     df_features["median-absolute-deviation"] = df_in.apply(lambda x: mad(x))
-    df_features["detection-significance"] = (df_features["peak"] - df_features["median"]) / df_features[
-        "median-absolute-deviation"
-    ]
+    df_features["detection-significance"] = (
+        df_features["peak"] - df_features["median"]
+    ) / df_features["median-absolute-deviation"]
 
     # if dataframe is normalized, then drop(columns=['mean', 'variance', 'rms', 'stdev', 'freq-rms', "waveform-factor"])
 
@@ -358,7 +375,9 @@ def create_feature_df(df_in):
     grad_window = 25
     stack_window = 100
     kurtosis_df = df_in.apply(
-        lambda x: kurtosis(np.lib.stride_tricks.sliding_window_view(x, window_shape=kurt_window), axis=1)
+        lambda x: kurtosis(
+            np.lib.stride_tricks.sliding_window_view(x, window_shape=kurt_window), axis=1
+        )
     )
     gradient_kurtosis_df = kurtosis_df.apply(lambda x: np.gradient(x))
     t1 = time.time()
@@ -375,16 +394,22 @@ def create_feature_df(df_in):
     t1 = time.time()
     print("stacked channels: ", str(timedelta(seconds=t1 - t0))[:-4])
     stacked_kurtosis_df = stacked_channels_df.apply(
-        lambda x: kurtosis(np.lib.stride_tricks.sliding_window_view(x, window_shape=kurt_window), axis=1)
+        lambda x: kurtosis(
+            np.lib.stride_tricks.sliding_window_view(x, window_shape=kurt_window), axis=1
+        )
     )
     t1 = time.time()
     print("did kurtosis on stacked channels: ", str(timedelta(seconds=t1 - t0))[:-4])
     stacked_gradient_kurtosis_df = stacked_kurtosis_df.apply(lambda x: np.gradient(x))
     stacked_kurtosis_gradients = []
-    for seq in np.lib.stride_tricks.sliding_window_view(stacked_gradient_kurtosis_df.columns, window_shape=stack_window)[
+    for seq in np.lib.stride_tricks.sliding_window_view(
+        stacked_gradient_kurtosis_df.columns, window_shape=stack_window
+    )[
         ::1
     ]:  # was grad_window?
-        stacked_kurtosis_gradients.append(np.median(np.argmax(stacked_gradient_kurtosis_df.loc[:, seq], axis=0)))
+        stacked_kurtosis_gradients.append(
+            np.median(np.argmax(stacked_gradient_kurtosis_df.loc[:, seq], axis=0))
+        )
     stacked_kurtosis_gradients = np.array(stacked_kurtosis_gradients) + kurt_window
     extension_length = df_in.shape[1] - len(stacked_kurtosis_gradients)
     stacked_kurtosis_gradients = np.concatenate(
@@ -424,9 +449,24 @@ def create_feature_df(df_in):
     # take min of diff of top three
     df_features["dist-from-signal-max"] = np.min(
         (
-            (np.abs(gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-1]) - stacked_kurtosis_gradients)),
-            (np.abs(gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-2]) - stacked_kurtosis_gradients)),
-            (np.abs(gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-3]) - stacked_kurtosis_gradients)),
+            (
+                np.abs(
+                    gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-1])
+                    - stacked_kurtosis_gradients
+                )
+            ),
+            (
+                np.abs(
+                    gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-2])
+                    - stacked_kurtosis_gradients
+                )
+            ),
+            (
+                np.abs(
+                    gradient_kurtosis_df.apply(lambda x: np.argsort(np.array(x))[-3])
+                    - stacked_kurtosis_gradients
+                )
+            ),
         ),
         axis=0,
     )
@@ -448,8 +488,12 @@ def create_feature_df(df_in):
         axis=0,
     )
 
-    df_features["3-peak-prominence-factor"] = envelope_df.apply(lambda x: get_prominence_factor(x, 3))
-    df_features["1-peak-prominence-factor"] = envelope_df.apply(lambda x: get_prominence_factor(x, 1))
+    df_features["3-peak-prominence-factor"] = envelope_df.apply(
+        lambda x: get_prominence_factor(x, 3)
+    )
+    df_features["1-peak-prominence-factor"] = envelope_df.apply(
+        lambda x: get_prominence_factor(x, 1)
+    )
 
     df_features["env-mean"] = envelope_df.mean()
     df_features["env-median"] = envelope_df.median()
@@ -464,14 +508,20 @@ def create_feature_df(df_in):
     df_features["env-stdev"] = envelope_df.std()
     df_features["env-root-amplitude"] = envelope_df.apply(lambda x: root_amplitude(x))
     df_features["env-margin-factor"] = df_features["env-peak"] / df_features["env-root-amplitude"]
-    df_features["env-impulse-factor"] = df_features["env-peak"] / df_features["env-Average-rectified-value"]
+    df_features["env-impulse-factor"] = (
+        df_features["env-peak"] / df_features["env-Average-rectified-value"]
+    )
     df_features["env-waveform-factor"] = df_features["env-rms"] / df_features["env-mean"]
-    df_features["env-shape-factor"] = df_features["env-rms"] / df_features["env-Average-rectified-value"]
-    df_features["env-clearance-factor"] = df_features["env-peak"] / df_features["env-root-amplitude"]
+    df_features["env-shape-factor"] = (
+        df_features["env-rms"] / df_features["env-Average-rectified-value"]
+    )
+    df_features["env-clearance-factor"] = (
+        df_features["env-peak"] / df_features["env-root-amplitude"]
+    )
     df_features["env-median-absolute-deviation"] = envelope_df.apply(lambda x: mad(x))
-    df_features["env-detection-significance"] = (df_features["env-peak"] - df_features["env-median"]) / df_features[
-        "env-median-absolute-deviation"
-    ]
+    df_features["env-detection-significance"] = (
+        df_features["env-peak"] - df_features["env-median"]
+    ) / df_features["env-median-absolute-deviation"]
 
     # what about kurtosis *of* rms envelope? (maybe ask hugo how his works?) - d/dt kurtosis, windowed
     # one single value across recorded experiments for how contrasting the experiment is (how shitty the channels are overall)
@@ -569,7 +619,9 @@ def create_feature_df(df_in):
     df_features["env-psd-entropy"] = np.array(df_env_psd.apply(lambda x: entropy(x)))
     df_features["env_psd-rms"] = np.array(df_env_psd.apply(lambda x: rms(x)))
     df_features["env_psd-peak"] = np.array(df_env_psd.abs().max())
-    df_features["env_psd-crest-factor"] = np.array(df_features["env_psd-peak"] / df_features["env_psd-rms"])
+    df_features["env_psd-crest-factor"] = np.array(
+        df_features["env_psd-peak"] / df_features["env_psd-rms"]
+    )
 
     # FFT-derived features
     df_fft = df_in.apply(lambda x: fft(x.values)).abs()
@@ -594,7 +646,9 @@ def create_feature_df(df_in):
     df_features["env-freq-entropy"] = np.array(df_env_fft.apply(lambda x: entropy(x)))
     df_features["env_freq-rms"] = np.array(df_env_fft.apply(lambda x: rms(x)))
     df_features["env_freq-peak"] = np.array(df_env_fft.max())
-    df_features["env_freq-crest-factor"] = np.array(df_features["env_freq-peak"] / df_features["env_freq-rms"])
+    df_features["env_freq-crest-factor"] = np.array(
+        df_features["env_freq-peak"] / df_features["env_freq-rms"]
+    )
     df_features["two_kurtoses"] = df_features["env_freq-kurtosis"] * df_features["kurtosis"]
 
     return df_features
@@ -606,9 +660,13 @@ def add_beta_features(df_features, path="results", event_date=""):
     pcc_feature = create_feature_from_matrix(load_matrix("pcc_matrix", event_date, path))
     pcc_lags_feature = create_feature_from_matrix(load_matrix("pcc_lags_matrix", event_date, path))
     pcc_mean_feature = create_feature_from_matrix(load_matrix("pcc_mad_matrix", event_date, path))
-    pcc_median_feature = create_feature_from_matrix(load_matrix("pcc_median_matrix", event_date, path))
+    pcc_median_feature = create_feature_from_matrix(
+        load_matrix("pcc_median_matrix", event_date, path)
+    )
     pcc_mad_feature = create_feature_from_matrix(load_matrix("pcc_mad_matrix", event_date, path))
-    modified_pcc_feature = create_feature_from_matrix(load_matrix("modified_pcc_matrix", event_date, path))
+    modified_pcc_feature = create_feature_from_matrix(
+        load_matrix("modified_pcc_matrix", event_date, path)
+    )
 
     df_features["beta"] = pcc_feature
     df_features["modified-beta"] = modified_pcc_feature

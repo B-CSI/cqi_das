@@ -1,3 +1,11 @@
+"""
+Copyright (c) 2025, Spanish National Research Council (CSIC)
+Developed by the Barcelona Center for Subsurface Imaging (B-CSI)
+
+This source code is subject to the terms of the
+GNU Lesser General Public License.
+"""
+
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
