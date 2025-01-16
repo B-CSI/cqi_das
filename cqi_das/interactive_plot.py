@@ -300,7 +300,7 @@ def create_interactive_plot(
 
     threshold_line = ax_mid.axvline(initial_threshold, color="maroon", linestyle="--", linewidth=2)
     text_threshold_info = fig.suptitle(
-        f"Current threshold: {initial_threshold:.2f}. Drag the line to change!"
+        f"Current threshold: {initial_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
     )
 
     def on_threshold_release(new_threshold: float) -> None:
@@ -316,7 +316,7 @@ def create_interactive_plot(
             new_threshold,
         )
         text_threshold_info.set_text(
-            f"Current threshold: {new_threshold:.2f}. Drag the line to change!"
+            f"Current threshold: {new_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
         )
 
     # Attach the draggable threshold

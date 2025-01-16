@@ -113,6 +113,9 @@ class CQIPreprocessor:
             factor = int(self.sampling_rate / 50)
             filtered_data = filtered_data.apply(lambda col: scipy.signal.decimate(col, factor))
 
+        if filtered_data.shape[0] > 6000:
+            raise RuntimeWarning("Input data is longer than 2min. CQIs may be wrong")
+
         return filtered_data
 
     def standardize(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -169,6 +172,20 @@ class CQIPreprocessor:
         df_features = df_features.reindex(scaled_data.columns)  # preserve channel order
         return df_features
 
+    @staticmethod
+    def sanity_check(data: pd.DataFrame) -> None:
+        """
+        Check if the dataset contains infty or nan.
+        """
+        if np.isinf(data).any(axis=None):
+            raise RuntimeError("Data contains values that are infinity")
+
+        if data.isna().any(axis=None):
+            raise RuntimeError("Data contains nans")
+
+    def size_check_plot(data: pd.DataFrame) -> None:
+        pass
+
 
 def calculate_cqi(
     data: pd.DataFrame,
@@ -213,6 +230,8 @@ def calculate_cqi(
     """
     processor = CQIPreprocessor(sampling_rate)
 
+    processor.sanity_check(data)
+
     # Apply filtering and decimation
     if not skip_filtering:
         filtered_data = processor.filter_bandpass(data, decimate=not skip_decimation)
@@ -239,11 +258,14 @@ def calculate_cqi(
         import matplotlib.pyplot as plt
         from .interactive_plot import create_interactive_plot
 
+        if filtered_data.shape[0] * filtered_data.shape[1] > 5e7:
+            raise RuntimeWarning("Plotting: data size may be too large to fit into memory")
+
         if decision_threshold is None:
             decision_threshold = 0.5
 
         fig, dragger = create_interactive_plot(
-            data, smoothed_probs, data.columns, initial_threshold=decision_threshold
+            filtered_data, smoothed_probs, data.columns, initial_threshold=decision_threshold
         )
         plt.show()
         decision_threshold = dragger.current_threshold
