@@ -19,9 +19,11 @@ dependencies = [
   "librosa",
   "scipy",
   "pandas",
-  "scikit-learn",
+  "scikit-learn==1.5.2",
   "matplotlib",
-  "obspy"
+  "obspy",
+  "h5py",
+  "xgboost"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -23,8 +23,6 @@ from scipy.fft import fft
 from scipy.signal import hilbert, find_peaks, peak_prominences
 from scipy.stats import median_abs_deviation, kurtosis, entropy
 from matplotlib.mlab import psd
-from dtaidistance import dtw
-from dtaidistance import dtw_visualisation as dtwvis
 
 
 # Functions to define beta from Munoz, Soto 2022.
