@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
 import numpy as np
 import pandas as pd
+import threading
+import time
 
 
 class DraggableThreshold:
@@ -20,7 +22,11 @@ class DraggableThreshold:
     """
 
     def __init__(
-        self, ax_mid: plt.Axes, line: plt.Line2D, update_callback: callable, step: float = 0.01
+        self,
+        ax_mid: plt.Axes,
+        line: plt.Line2D,
+        update_callback: callable,
+        step: float = 0.01,
     ) -> None:
         """
         Initialize a DraggableThreshold object.
@@ -49,6 +55,42 @@ class DraggableThreshold:
         self.cid_press = line.figure.canvas.mpl_connect("button_press_event", self.on_press)
         self.cid_release = line.figure.canvas.mpl_connect("button_release_event", self.on_release)
         self.cid_motion = line.figure.canvas.mpl_connect("motion_notify_event", self.on_motion)
+
+        self._resize_timer = None
+        self._resize_last_time = 0
+        self.cid_resize = line.figure.canvas.mpl_connect("resize_event", self.on_resize)
+        self.update_background_ax_mid()
+
+    def on_resize(self, event):
+        """When resizing ends, cache the background"""
+        if self._resize_timer is not None:
+            self._resize_timer.cancel()
+
+        # Start a new timer
+        self._resize_last_time = time.time()
+        self._resize_timer = threading.Timer(0.5, self._debounced_update_background)
+        self._resize_timer.start()
+
+    def _debounced_update_background(self):
+        """
+        Runs after 0.5s of no new resize_event.
+        """
+        # We can do final checks, or just recache directly:
+        self.update_background_ax_mid()
+
+    def update_background_ax_mid(self):
+        """
+        Update and cache the background of ax_mid. This is important for smooth
+        interactions.
+        """
+
+        self.line.set_visible(False)
+        self.line.figure.canvas.draw()
+
+        self.background_mid = self.line.figure.canvas.copy_from_bbox(self.ax_mid.bbox)
+
+        self.line.set_visible(True)
+        self.line.figure.canvas.draw()
 
     def on_press(self, event: MouseEvent) -> None:
         """
@@ -86,8 +128,24 @@ class DraggableThreshold:
         new_x = round(new_x / self.step) * self.step
         new_x = max(0.0, min(1.0, new_x))
 
+        if abs(new_x - self.current_threshold) < 0.01:
+            # Skip if the line hasn’t moved enough
+            return
+
+        # Before drawing, restore the cached background
+        if self.background_mid is not None:
+            self.line.figure.canvas.restore_region(self.background_mid)
+
+        # Update line position
         self.line.set_xdata([new_x, new_x])
-        self.line.figure.canvas.draw_idle()
+
+        # Draw only the line artist
+        self.ax_mid.draw_artist(self.line)
+
+        # Blit the region
+        self.line.figure.canvas.blit(self.ax_mid.bbox)
+
+        # self.line.figure.canvas.draw_idle()
 
     def on_release(self, event: MouseEvent) -> None:
         """
@@ -106,7 +164,8 @@ class DraggableThreshold:
         self.current_threshold = final_threshold
         self.update_callback(final_threshold)
 
-        self.line.figure.canvas.draw()
+        # self.line.figure.canvas.draw()
+        self.update_background_ax_mid()
 
 
 def update_event_selection_plots(
@@ -267,4 +326,5 @@ def create_interactive_plot(
     on_threshold_release(initial_threshold)
 
     fig.tight_layout()
+    dragger.update_background_ax_mid()
     return fig, dragger
