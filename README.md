@@ -1,6 +1,6 @@
 # Channel Quality Index - Automatic Identification of High-quality Channels in Distributed Acoustic Sensing
 
-The **cqi_das** Python module provides tools to **detect and label high and low quality channels** in Distributed Acoustic Sensing (DAS) data. It includes functionality for both **automatic** channel-quality prediction (via `calculate_cqi`) and **manual** channel labeling (via `ChannelSelector`).
+The **cqi_das** Python module provides tools to **detect and label high and low quality channels** in Distributed Acoustic Sensing (DAS) data for **submarine cables**. It includes two different functionalities, for both **automatic** channel-quality prediction (via `calculate_cqi`) and **manual** channel labeling (via `ChannelSelector`).
 
 ![CQI Showcase](figures/cqi_showcase_plot.jpg)
 
@@ -9,6 +9,8 @@ The **cqi_das** Python module provides tools to **detect and label high and low 
 Distributed Acoustic Sensing (DAS) data can contain many channels over long distances. Not all channels are equal in terms of signal quality, and **cqi_das** helps:
 1. **Predict** channel quality (i.e., the refined probability of a channel being high-quality).
 2. **Manually label** channels for cases custom classification is needed. Useful for training data generation.
+
+`cqi_das` was developed for **submarine cables** data. The performance drops when applied to land segments of cable.
 
 ## Installation
 
@@ -22,6 +24,9 @@ pip install .
 
 
 ### Usage example
+
+To calculate the CQI on a dataset, the function `calculate_cqi` is used. First, the user should select a 
+30-60 seconds window around the event. Any land channels should also be excluded.
 
 ```python
 import cqi_das
@@ -59,7 +64,7 @@ Below is an explanation of the main parameters of `calculate_cqi`:
   If provided, transform probabilities into 0/1 classification. If not given, return probabilities.
 
 - **interactive** : `bool`, default=False  
-  If `True`, opens an interactive matplotlib plot for threshold adjustment.
+  If `True`, opens an interactive matplotlib plot for threshold adjustment. The selected threshold is saved and used for setting the 0/1 selection.
 
 - **num_jobs** : `int`, default=1   
   Number of jobs to run the feature extraction. Can help speed-up.
@@ -69,7 +74,7 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 ### Interactive mode
 
 Setting the parameter `calculate_cqi(..., interactive=True)` enables the interactive selection of the decision threshold. A plot such as the one at the beginning of the page is generated, and the decision threshold line can be clicked and
-dragged to change the threshold. When this is used, the output is a prediction 0 or 1, instead of a probability.
+dragged to change the threshold. When the figure is closed, the threshold that is currently set is used as the decision threshold. When this is used, the output is a prediction 0 or 1, instead of a probability.
 
 ### CQI processing steps
 
