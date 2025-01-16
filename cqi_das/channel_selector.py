@@ -13,7 +13,7 @@ from collections.abc import Iterable
 from matplotlib.widgets import Button
 import time
 import threading
-import utils as utl
+from . import utils as utl
 from datetime import datetime
 
 

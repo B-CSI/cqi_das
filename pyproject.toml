@@ -20,7 +20,8 @@ dependencies = [
   "scipy",
   "pandas",
   "scikit-learn",
-  "matplotlib"
+  "matplotlib",
+  "obspy"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

@@ -119,7 +119,7 @@ def calculate_psd(df_in: pd.DataFrame) -> pd.DataFrame:
         power, _ = psd(df_in[channel].values, Fs=50)
         df_psd[idx] = power
 
-    return pd.DataFrame(df_psd.T)
+    return pd.DataFrame(df_psd.T, columns=df_in.columns)
 
 
 def get_prominence_factor_bs(envelope_channel: np.ndarray, num_peaks: int) -> int:
@@ -265,7 +265,7 @@ def calculate_selected_features(data: pd.DataFrame) -> pd.DataFrame:
     final_order = [
         "env-impulse-factor",           # 1
         "env-margin-factor",            # 1
-        "env-peak-time",                # 1
+        "env-peak",                     # 1
         "env_freq-avg",                 # 1
         "psd-kurtosis",                 # 1
         "env-variance",                 # 6

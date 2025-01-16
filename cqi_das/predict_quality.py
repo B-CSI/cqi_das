@@ -9,15 +9,17 @@ GNU Lesser General Public License.
 import numpy as np
 import pandas as pd
 import obspy
-import joblib
 import scipy.signal
+from pathlib import Path
+import joblib
+from joblib import Parallel, delayed
 
 from dataclasses import dataclass
 from sklearn.preprocessing import RobustScaler
 from sklearn.calibration import CalibratedClassifierCV
 from typing import Optional
 
-from signal_features import calculate_selected_features
+from .signal_features import calculate_selected_features
 
 
 class CQIModel:
@@ -30,8 +32,8 @@ class CQIModel:
 
     def __init__(
         self,
-        clf_path: str = "./trained_models/calibrated_xgb.pkl",
-        scaler_path: str = "./trained_models/robust_scaler.pkl",
+        clf_path: str = None,
+        scaler_path: str = None,
     ) -> None:
         """
         Initialize the CQIModel with a calibrated classifier and a robust scaler.
@@ -43,6 +45,14 @@ class CQIModel:
         scaler_path : str, optional
             Path to the pickled robust scaler.
         """
+        # Determine the directory of this script/module
+        base_path = Path(__file__).resolve().parent
+
+        # Set default paths if not provided
+        clf_path = clf_path or base_path / "trained_models/calibrated_xgb.pkl"
+        scaler_path = scaler_path or base_path / "trained_models/robust_scaler.pkl"
+
+        # Load the classifier and scaler
         self.classifier: CalibratedClassifierCV = joblib.load(clf_path)
         self.scaler: RobustScaler = joblib.load(scaler_path)
 
@@ -121,21 +131,43 @@ class CQIPreprocessor:
         """
         return data.apply(lambda col: (col - col.mean()) / col.std(), axis=0)
 
-    def calculate_features(self, scaled_data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_features(self, scaled_data: pd.DataFrame, n_jobs: int = 1) -> pd.DataFrame:
         """
-        Extract features from scaled data.
+        Extract features from scaled data, optionally in parallel.
 
         Parameters
         ----------
         scaled_data : pd.DataFrame
-            Standardized (or otherwise scaled) input.
+            Standardized (or otherwise scaled) input where each column
+            represents one channel.
+        n_jobs : int, optional
+            Number of parallel jobs. If 1 (default), everything is done
+            sequentially. If > 1, columns are split into `n_jobs` parts
+            and each part is processed in parallel.
 
         Returns
         -------
         pd.DataFrame
-            Extracted features.
+            Extracted features. The row index corresponds to the original
+            channel names (i.e., columns of `scaled_data`).
         """
-        return calculate_selected_features(scaled_data)
+        # Single-process mode
+        if n_jobs == 1:
+            return calculate_selected_features(scaled_data)
+
+        # Parallel mode: split columns, process each subset, then rejoin
+        col_splits = np.array_split(scaled_data.columns, n_jobs)
+
+        def _process_subset(cols):
+            subset = scaled_data.loc[:, cols]
+            return calculate_selected_features(subset)
+
+        results = Parallel(n_jobs=n_jobs)(delayed(_process_subset)(cols) for cols in col_splits)
+
+        # Concatenate along rows (i.e. channels), then reindex to restore original column order
+        df_features = pd.concat(results, axis=0)
+        df_features = df_features.reindex(scaled_data.columns)  # preserve channel order
+        return df_features
 
 
 def calculate_cqi(
@@ -147,6 +179,7 @@ def calculate_cqi(
     skip_filtering: bool = False,
     skip_decimation: bool = False,
     skip_channel_norm: bool = False,
+    num_jobs: int = 1,
 ) -> pd.Series:
     """
     Compute CQI probabilities or binary labels for each channel.
@@ -169,6 +202,8 @@ def calculate_cqi(
         If True, skip decimation.
     skip_channel_norm : bool, optional
         If True, skip standardization.
+    num_jobs: int, optional
+        Number of jobs to run feature extraction
 
     Returns
     -------
@@ -191,7 +226,8 @@ def calculate_cqi(
         standardized_data = filtered_data
 
     # Extract features and predict probabilities
-    features = processor.calculate_features(standardized_data)
+    features = processor.calculate_features(standardized_data, num_jobs)
+
     model = CQIModel()
     probabilities = model.predict(features)
 
@@ -201,7 +237,7 @@ def calculate_cqi(
     # Interactive thresholding
     if interactive:
         import matplotlib.pyplot as plt
-        from interactive_plot import create_interactive_plot
+        from .interactive_plot import create_interactive_plot
 
         if decision_threshold is None:
             decision_threshold = 0.5
