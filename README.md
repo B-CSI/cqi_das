@@ -60,6 +60,7 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 
 - **interactive** : `bool`, default=False  
   If `True`, opens an interactive matplotlib plot for threshold adjustment.
+  
 - **num_jobs** : `int`, default=1
   Number of jobs to run the feature extraction. Can help speed-up.
 
