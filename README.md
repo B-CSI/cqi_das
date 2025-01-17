@@ -45,7 +45,9 @@ def import_h5(filename: str):
 data = import_h5("example.h5")
 
 # Predict probabilities for each channel
-cqis = cqi_das.calculate_cqi(data, sampling_rate=50)
+# - show_plot=True enables the interactive plot
+# - num_jobs=4 accelerates feature extraction by running on 4 different processes
+cqis = cqi_das.calculate_cqi(data, sampling_rate=50, show_plot=True, num_jobs=4)
 print(cqis)
 ```
 
@@ -63,7 +65,7 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 - **decision_threshold** : `float`, optional  
   If provided, transform probabilities into 0/1 classification. If not given, return probabilities.
 
-- **interactive** : `bool`, default=False  
+- **show_plot** : `bool`, default=False  
   If `True`, opens an interactive matplotlib plot for threshold adjustment. The selected threshold is saved and used for setting the 0/1 selection.
 
 - **num_jobs** : `int`, default=1   
@@ -71,9 +73,9 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 
 `calculate_cqi` returns a `pd.Series` with the quality indexes for every channel in `data`. 
 
-### Interactive mode
+### Interactive plot mode
 
-Setting the parameter `calculate_cqi(..., interactive=True)` enables the interactive selection of the decision threshold. A plot such as the one at the beginning of the page is generated, and the decision threshold line can be clicked and
+Setting the parameter `calculate_cqi(..., show_plot=True)` enables the interactive selection of the decision threshold. A plot such as the one at the beginning of the page is generated, and the decision threshold line can be clicked and
 dragged to change the threshold. When the figure is closed, the threshold that is currently set is used as the decision threshold. When this is used, the output is a prediction 0 or 1, instead of a probability.
 
 ### CQI processing steps
@@ -82,7 +84,7 @@ The CQI for a given channel is the result of several processing steps. Internall
 
 ![CQI Processing Diagram](figures/diagram-processing-wb.png)
 
-The `notebooks/` folder contains various Jupyter notebooks that illustrate how the channel-quality index (CQI) model was developed and trained. You can open these notebooks to understand:
+The `internal_docs/` folder contains various Jupyter notebooks that illustrate how the channel-quality index (CQI) model was developed and trained. The notebooks are not meant for usage of CQI, but you can open these notebooks to understand:
 - How features were extracted from DAS data.
 - How the model was optimized and validated.
 

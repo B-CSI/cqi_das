@@ -192,7 +192,7 @@ def calculate_cqi(
     sampling_rate: float = 50.0,
     channel_smoothing: float = 0.5,
     decision_threshold: Optional[float] = None,
-    interactive: bool = False,
+    show_plot: bool = False,
     skip_filtering: bool = False,
     skip_decimation: bool = False,
     skip_channel_norm: bool = False,
@@ -211,7 +211,7 @@ def calculate_cqi(
         EMA alpha for smoothing predicted probabilities.
     decision_threshold : float, optional
         Threshold above which channels are labeled as high quality.
-    interactive : bool, optional
+    show_plot : bool, optional
         If True, show an interactive threshold-adjustment plot.
     skip_filtering : bool, optional
         If True, skip bandpass filtering.
@@ -254,7 +254,7 @@ def calculate_cqi(
     smoothed_probs = pd.Series(probabilities).ewm(alpha=channel_smoothing).mean()
 
     # Interactive thresholding
-    if interactive:
+    if show_plot:
         import matplotlib.pyplot as plt
         from .interactive_plot import create_interactive_plot
 
