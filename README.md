@@ -39,7 +39,7 @@ def import_h5(filename: str):
     """
     with h5py.File(filename, "r") as fp:
         data_array = fp["data"][...]
-        # Make sure that axes are [time, distance]
+        # Make sure that dimensions are [time, distance]
         df = pd.DataFrame(data_array).T
     return df
 
