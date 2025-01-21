@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import threading
 import time
+import os
 
 
 class DraggableThreshold:
@@ -225,6 +226,11 @@ def create_interactive_plot(
     channel_probs: pd.Series,
     channel_nums: pd.Index,
     initial_threshold: float = 0.6,
+    show_indications: bool = True,
+    save_path: str = None,
+    figure_size: tuple[int, int] = (10, 10),
+    vmin: float = -5,
+    vmax: float = 5,
 ) -> tuple[plt.Figure, DraggableThreshold]:
     """
     Create an interactive figure for visualizing channel-quality probabilities.
@@ -253,13 +259,12 @@ def create_interactive_plot(
     fig, (ax_left, ax_mid, ax_right) = plt.subplots(
         1,
         3,
-        figsize=(10, 10),
+        figsize=figure_size,
         gridspec_kw={"width_ratios": [8, 2, 8]},
         sharey=True,
     )
 
     dummy_data = np.zeros_like(data_df)
-    vmin, vmax = -5, 5
 
     # Derive time axis extent for demonstration
     first_sec, last_sec = 0, int(dummy_data.shape[0] / 50)
@@ -299,9 +304,12 @@ def create_interactive_plot(
     ax_mid.set_xlabel("Probability (High)")
 
     threshold_line = ax_mid.axvline(initial_threshold, color="maroon", linestyle="--", linewidth=2)
-    text_threshold_info = fig.suptitle(
-        f"Current threshold: {initial_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
-    )
+    if show_indications:
+        text_threshold_info = fig.suptitle(
+            f"Current threshold: {initial_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
+        )
+    else:
+        text_threshold_info = None
 
     def on_threshold_release(new_threshold: float) -> None:
         update_event_selection_plots(
@@ -315,9 +323,10 @@ def create_interactive_plot(
             im_right,
             new_threshold,
         )
-        text_threshold_info.set_text(
-            f"Current threshold: {new_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
-        )
+        if text_threshold_info is not None:
+            text_threshold_info.set_text(
+                f"Current threshold: {new_threshold:.2f}. Drag the line to change! Threshold is saved automatically."
+            )
 
     # Attach the draggable threshold
     dragger = DraggableThreshold(ax_mid, threshold_line, on_threshold_release, step=0.01)
@@ -327,4 +336,10 @@ def create_interactive_plot(
 
     fig.tight_layout()
     dragger.update_background_ax_mid()
+
+    if not show_indications and save_path is not None:
+        absolute_path = os.path.abspath(save_path)
+        print(f"Saving plot to {absolute_path}")
+        fig.savefig(save_path, dpi=300, bbox_inches="tight")
+
     return fig, dragger

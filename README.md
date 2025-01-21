@@ -81,6 +81,25 @@ Below is an explanation of the main parameters of `calculate_cqi`:
 Setting the parameter `calculate_cqi(..., show_plot=True)` enables the interactive selection of the decision threshold. A plot such as the one at the beginning of the page is generated, and the decision threshold line can be clicked and
 dragged to change the threshold. When the figure is closed, the threshold that is currently set is used as the decision threshold. When this is used, the output is a prediction 0 or 1, instead of a probability.
 
+### Saving the plot
+The plot can be customized and saved using the `plot_parameters` argument, with the desired amplitude range and figure size. 
+```python
+plot_parameters = {
+    "save_path": "./figure_name.png", # include the image extension
+    "figure_size": (10, 10), # order is (width, height)
+    "vmin": -5, "vmax": 5,  # data range that the colormap covers
+}
+cqi_das.calculate_cqi(
+  data,
+  sampling_rate=50,
+  channel_smoothing=0.5,
+  show_plot=True,
+  num_jobs=8,
+  plot_parameters=plot_parameters,
+)
+```
+
+
 ### CQI processing steps
 
 The CQI for a given channel is the result of several processing steps. Internally, CQI follows the following processing flow.

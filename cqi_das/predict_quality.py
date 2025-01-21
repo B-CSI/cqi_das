@@ -212,6 +212,7 @@ def calculate_cqi(
     channel_smoothing: float = 0.5,
     decision_threshold: Optional[float] = None,
     show_plot: bool = False,
+    plot_parameters: dict = dict(),
     skip_filtering: bool = False,
     skip_decimation: bool = False,
     skip_channel_norm: bool = False,
@@ -293,10 +294,25 @@ def calculate_cqi(
             decision_threshold = 0.5
 
         fig, dragger = create_interactive_plot(
-            cut_data, smoothed_probs, data.columns, initial_threshold=decision_threshold
+            cut_data,
+            smoothed_probs,
+            data.columns,
+            initial_threshold=decision_threshold,
+            **plot_parameters,
         )
         plt.show()
         decision_threshold = dragger.current_threshold
+
+        # Create plot again to save it if requested
+        if plot_parameters.get("save_path", None) is not None:
+            create_interactive_plot(
+                cut_data,
+                smoothed_probs,
+                data.columns,
+                initial_threshold=decision_threshold,
+                show_indications=False,
+                **plot_parameters,
+            )
 
     # Return labels if threshold is provided
     if decision_threshold is not None:

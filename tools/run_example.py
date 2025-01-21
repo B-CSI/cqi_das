@@ -10,7 +10,19 @@ candas2_df = utils.import_h5("data/CANDAS2/CANDAS2_2022-12-27_07-46-15.h5")
 
 candas2_df = utils.set_data_limits(candas2_df, first_ch=450, first_time=2500, last_time=6500)
 
+plot_parameters = {
+    "save_path": "./figure_test.png",
+    "figure_size": (10, 10),
+    "vmin": -5,
+    "vmax": 5,
+}
+
 cqis = calculate_cqi(
-    candas2_df, sampling_rate=50, channel_smoothing=0.5, show_plot=True, num_jobs=8
+    candas2_df,
+    sampling_rate=50,
+    channel_smoothing=0.5,
+    show_plot=True,
+    num_jobs=8,
+    plot_parameters=plot_parameters,
 )
 print(cqis)
