@@ -118,6 +118,25 @@ class CQIPreprocessor:
 
         return filtered_data
 
+    def remove_edges(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Remove top and bottom 5% of samples. This results in
+        a time frame 10% smaller.
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            DataFrame with columns as channels.
+
+        Returns
+        -------
+        pd.DataFrame
+            Signals having top and bottom 5% of samples cut
+        """
+
+        remove_len = data.shape[0] // 20
+        return data.iloc[remove_len:-remove_len,]
+
     def standardize(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Standardize each channel to mean 0 and std 1.
@@ -196,6 +215,7 @@ def calculate_cqi(
     skip_filtering: bool = False,
     skip_decimation: bool = False,
     skip_channel_norm: bool = False,
+    remove_edge_effects: bool = True,
     num_jobs: int = 1,
 ) -> pd.Series:
     """
@@ -219,6 +239,8 @@ def calculate_cqi(
         If True, skip decimation.
     skip_channel_norm : bool, optional
         If True, skip standardization.
+    remove_edge_effects : bool, optional
+        If True, cut top and bottom 5% of time samples
     num_jobs: int, optional
         Number of jobs to run feature extraction
 
@@ -238,11 +260,17 @@ def calculate_cqi(
     else:
         filtered_data = data
 
+    # Remove edge effects (top and bottom 5% of data)
+    if remove_edge_effects:
+        cut_data = processor.remove_edges(filtered_data)
+    else:
+        cut_data = filtered_data
+
     # Standardize channels
     if not skip_channel_norm:
-        standardized_data = processor.standardize(filtered_data)
+        standardized_data = processor.standardize(cut_data)
     else:
-        standardized_data = filtered_data
+        standardized_data = cut_data
 
     # Extract features and predict probabilities
     features = processor.calculate_features(standardized_data, num_jobs)
@@ -265,7 +293,7 @@ def calculate_cqi(
             decision_threshold = 0.5
 
         fig, dragger = create_interactive_plot(
-            filtered_data, smoothed_probs, data.columns, initial_threshold=decision_threshold
+            cut_data, smoothed_probs, data.columns, initial_threshold=decision_threshold
         )
         plt.show()
         decision_threshold = dragger.current_threshold

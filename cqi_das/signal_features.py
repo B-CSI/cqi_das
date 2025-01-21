@@ -249,8 +249,12 @@ def calculate_selected_features(data: pd.DataFrame) -> pd.DataFrame:
     mfcc_maxes = []
     for channel_name in data.columns:
         y = data[channel_name].values
+        if len(y) < 2048:  # pad for FFT
+            y_pad = np.pad(y, (0, 2048 - len(y)))
+        else:
+            y_pad = y
         # Compute 13 MFCCs, shape -> (13, time_frames)
-        mfcc_all = librosa.feature.mfcc(y=y, sr=50, n_mfcc=13)
+        mfcc_all = librosa.feature.mfcc(y=y_pad, sr=50, n_mfcc=13)
         # Index=1 => second MFCC coefficient, commonly referred to as 'MFCC1'
         # (since the 0th is often the energy or base coefficient).
         mfcc_coeff = mfcc_all[1, :] if mfcc_all.shape[0] > 1 else np.array([0])

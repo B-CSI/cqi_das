@@ -17,8 +17,6 @@ from scipy.signal import decimate
 import pandas as pd
 import numpy as np
 
-# decimate_data = False
-
 
 def _proc_filename(fn, year: int, exp_abbr: str):
     if exp_abbr == "C":

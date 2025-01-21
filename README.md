@@ -26,7 +26,7 @@ pip install .
 ### Usage example
 
 To calculate the CQI on a dataset, the function `calculate_cqi` is used. First, the user should select a 
-30-60 seconds window around the event. Any land channels should also be excluded.
+40-80 seconds window around the event. Notice that to remove edge effects after filtering, `calculate_cqi` will cut the first and last 5% of time samples. Any land channels should also be excluded.
 
 ```python
 import cqi_das
@@ -39,10 +39,13 @@ def import_h5(filename: str):
     """
     with h5py.File(filename, "r") as fp:
         data_array = fp["data"][...]
+        # Make sure that axes are [time, distance]
         df = pd.DataFrame(data_array).T
     return df
 
+# The user should select a 40-80s window around the event
 data = import_h5("example.h5")
+
 
 # Predict probabilities for each channel
 # - show_plot=True enables the interactive plot
