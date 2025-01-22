@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from sklearn.preprocessing import RobustScaler
 from sklearn.calibration import CalibratedClassifierCV
 from typing import Optional
+import warnings
 
 from .signal_features import calculate_selected_features
 
@@ -114,7 +115,7 @@ class CQIPreprocessor:
             filtered_data = filtered_data.apply(lambda col: scipy.signal.decimate(col, factor))
 
         if filtered_data.shape[0] > 6000:
-            raise RuntimeWarning("Input data is longer than 2min. CQIs may be wrong")
+            warnings.warn("Input data is longer than 2min. CQIs may be wrong", RuntimeWarning)
 
         return filtered_data
 
@@ -288,7 +289,7 @@ def calculate_cqi(
         from .interactive_plot import create_interactive_plot
 
         if filtered_data.shape[0] * filtered_data.shape[1] > 5e7:
-            raise RuntimeWarning("Plotting: data size may be too large to fit into memory")
+            warnings.warn("Plotting: data size may be too large to fit into memory", RuntimeWarning)
 
         if decision_threshold is None:
             decision_threshold = 0.5
