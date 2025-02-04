@@ -317,5 +317,6 @@ def calculate_cqi(
 
     # Return labels if threshold is provided
     if decision_threshold is not None:
-        return (smoothed_probs > decision_threshold).astype(int)
-    return smoothed_probs
+        return (smoothed_probs > decision_threshold).astype(int).set_axis(data.columns)
+
+    return smoothed_probs.set_axis(data.columns)
